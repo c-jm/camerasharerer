@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">CameraSharerer</string>
+    <string name="openCamera">Open Camera</string>
+</resources>
