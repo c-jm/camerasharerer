@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Net.Sockets;
+using System.Text;
 
 using Android;
 using Android.App;
@@ -59,16 +60,33 @@ namespace CameraSharerer
         {
             try
             {
-                var client = new TcpClient("192.168.0.111", 500);
+                var client = new TcpClient("192.168.0.108", 500);
 
-                var clientStream = client.GetStream();
+                byte[] bitmapData;
 
-                using (var clientStreamWriter = new StreamWriter(clientStream))
+                using (var stream = new MemoryStream())
                 {
-                    clientStreamWriter.Write("testing");
-                    clientStreamWriter.Flush();
-                    clientStreamWriter.Close();
+                    _resizedBitmap.Compress(Bitmap.CompressFormat.Jpeg, 0, stream);
+                    bitmapData = stream.ToArray();
                 }
+
+                if (client.Connected)
+                {
+                    byte[] buffer = new byte[1024];
+                    client.Client.Send(Encoding.ASCII.GetBytes($"{bitmapData.Length}"));
+
+                    client.Client.Receive(buffer);
+
+                    var s = Encoding.ASCII.GetString(buffer);
+                    s = s.TrimEnd('\0');
+
+                    if (s == "OK")
+                    {
+                        client.Client.Send(bitmapData);
+                    }
+                }
+
+                client.Close();
             }
 
             catch (System.Exception ex)
@@ -104,9 +122,9 @@ namespace CameraSharerer
             int height = Resources.DisplayMetrics.HeightPixels;
             int width = _imgView.Width;
 
-            var bitmap = LoadAndResizeBitmap(_file.Path, width, height);
+            _resizedBitmap = LoadAndResizeBitmap(_file.Path, width, height);
 
-            _imgView.SetImageBitmap(bitmap);
+            _imgView.SetImageBitmap(_resizedBitmap);
         }
 
         private string UniqueImgFileName() => $"img_{System.DateTime.Now.Ticks.ToString()}.jpg";
