@@ -2,6 +2,7 @@
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 using System.Windows;
 using System.Windows.Media.Imaging;
 
@@ -16,18 +17,37 @@ namespace CSharpImageProcessor
 
             // @TODO: This will go into a TcpHandler class or something similar.
             Console.WriteLine("Listening...");
-            TcpListener tcpListener = new TcpListener(IPAddress.Parse("192.168.0.111"), 500);
+            TcpListener tcpListener = new TcpListener(IPAddress.Any, 500);
             tcpListener.Stop();
             tcpListener.Start();
 
             while (true)
             {
-                ///@TODO: Async brah.
-                TcpClient acceptedClient = tcpListener.AcceptTcpClient();
-                Console.WriteLine("Client connected man....");
+                Socket s = tcpListener.AcceptSocket();
+                ///@TODO: Async brah, also we want to do some threads.
+                byte[] binaryData = new byte[1024];
+
+                s.Receive(binaryData);
+
+                string msg = Encoding.ASCII.GetString(binaryData);
+
+                int imageSize = int.Parse(msg);
+
+                s.Send(Encoding.ASCII.GetBytes("OK"));
+
+                binaryData = new byte[imageSize];
+                 s.Receive(binaryData);
+
+                using (var ms = new MemoryStream(binaryData))
+                {
+                    var img = new BitmapImage();
+                    img.BeginInit();
+                    img.CacheOption = BitmapCacheOption.OnLoad;
+                    img.StreamSource = ms;
+                    img.EndInit();
+                    Clipboard.SetImage(img);
+                }
             }
-
-
             //ReadLocalImage(args);
         }
 
