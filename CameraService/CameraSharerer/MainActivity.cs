@@ -1,4 +1,7 @@
-﻿using Android;
+﻿using System.IO;
+using System.Net.Sockets;
+
+using Android;
 using Android.App;
 using Android.Content;
 using Android.Graphics;
@@ -18,8 +21,10 @@ namespace CameraSharerer
     [Activity(Label = "@string/app_name", Theme = "@style/AppTheme.NoActionBar", MainLauncher = true)]
     public class MainActivity : AppCompatActivity
     {
+        private Bitmap _resizedBitmap;
+
         private string _providerName = $"com.camerasharer.fileprovider";
-        // private const string IP = "192.168.0.111";
+        private const string IP = "192.168.0.111";
 
         private static string[] PERMISSIONS_NEEDED =
         {
@@ -52,6 +57,24 @@ namespace CameraSharerer
 
         private void BtnSendPicture_Click(object sender, System.EventArgs e)
         {
+            try
+            {
+                var client = new TcpClient("192.168.0.111", 500);
+
+                var clientStream = client.GetStream();
+
+                using (var clientStreamWriter = new StreamWriter(clientStream))
+                {
+                    clientStreamWriter.Write("testing");
+                    clientStreamWriter.Flush();
+                    clientStreamWriter.Close();
+                }
+            }
+
+            catch (System.Exception ex)
+            {
+                int i = 0;
+            }
         }
 
         private void BtnTakeAPicture_Click(object sender, System.EventArgs e)
